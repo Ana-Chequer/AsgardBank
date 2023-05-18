@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: postgreAna
       POSTGRES_PASSWORD: postgreAnaPass
       POSTGRES_DB: asgardbank
-#    volumes:
-#      - dbdata:/var/lib/postgresql/data:rw
-#volumes:
-#  dbdata:
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  dbdata:

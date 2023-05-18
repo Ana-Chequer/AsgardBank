@@ -1,9 +1,8 @@
 package br.com.zup.asgard.asgardbank.service;
 
-import br.com.zup.asgard.asgardbank.dto.CustomerDto;
-import br.com.zup.asgard.asgardbank.exception.CustomerNotDeletedException;
-import br.com.zup.asgard.asgardbank.exception.CustomerNotFoundException;
-import br.com.zup.asgard.asgardbank.model.Account;
+import br.com.zup.asgard.asgardbank.dto.CustomerRequest;
+import br.com.zup.asgard.asgardbank.dto.CustomerResponse;
+import br.com.zup.asgard.asgardbank.dto.CustomerUpdateRequest;
 import br.com.zup.asgard.asgardbank.model.Customer;
 import br.com.zup.asgard.asgardbank.repository.CustomerRepository;
 import org.springframework.beans.BeanUtils;
@@ -20,90 +19,55 @@ public class CustomerService {
         this.customerRepository = customerRepository;
     }
 
-    public CustomerDto searchCustomerByCpf(String cpf) throws CustomerNotFoundException {
+    public CustomerResponse searchCustomerByCpf(String cpf) {
 
-        Optional<Customer> foundCustomer = Optional.of(
-                customerRepository.findByCpf(cpf)
-                        .orElseThrow(() -> new CustomerNotFoundException()
-                )
-        );
+        CustomerResponse  customerResponse = new CustomerResponse();
+       Optional<Customer> customer = customerRepository.findByCpf(cpf);
 
-        final Customer customer = foundCustomer.get();
-        return new CustomerDto(
-                customer.getId(),
-                customer.getName(),
-                customer.getCpf(),
-                customer.getBirthDate(),
-                customer.getAddress(),
-                customer.getTelephone(),
-                customer.getEmail()
-        );
+        if(customer.isPresent()) {
+            return customerResponse.convertToCustomerResponse(customer.get());
+        }
+        return null;
     }
 
-    public CustomerDto searchCustomerById(Long id) throws CustomerNotFoundException {
+    public CustomerResponse createCustomer(CustomerRequest customerRequest) {
 
-        Optional<Customer> foundCustomer = Optional.of(
-                customerRepository.findById(id)
-                        .orElseThrow(() -> new CustomerNotFoundException()
-                        )
-        );
+        CustomerResponse  customerResponse = new CustomerResponse();
+        Customer createdCustomer = customerRequest.convertToCustomerModel();
+        Customer customer = customerRepository.save(createdCustomer);
 
-        final Customer customer = foundCustomer.get();
-        return new CustomerDto(
-                customer.getId(),
-                customer.getName(),
-                customer.getCpf(),
-                customer.getBirthDate(),
-                customer.getAddress(),
-                customer.getTelephone(),
-                customer.getEmail()
-        );
+           return customerResponse.convertToCustomerResponse(customer);
     }
 
-    public CustomerDto createCustomer(CustomerDto customerDto) {
+    public CustomerResponse deleteCustomer(Long id) {
 
-        final Customer createdCustomer = customerDto.toModel();
-        final Customer customer = customerRepository.save(createdCustomer);
+        CustomerResponse  customerResponse = new CustomerResponse();
+        Optional<Customer> customer = customerRepository.findById(id).
 
-            return customerDto.fromModel(customer);
+
+        if (customer.isPresent()) {
+            Customer recoveredCustomer = customer.get();
+            customerRepository.delete(recoveredCustomer);
+            return customerResponse.convertToCustomerResponse(recoveredCustomer);
         }
 
-    public CustomerDto deleteCustomer(Long id)
-            throws CustomerNotFoundException, CustomerNotDeletedException {
 
-        Optional<Customer> foundCustomer = Optional.of(
-                customerRepository.findById(id)
-                        .orElseThrow(() -> new CustomerNotFoundException()
-                )
-        );
+        return new CustomerResponse();
+    }
 
-        final Customer customer = foundCustomer.get();
-        final Account customerAccount = customer.getAccount();
 
-        if(customerAccount != null) {
-            throw new CustomerNotDeletedException();
+    public CustomerResponse updateCustomer(Long id, CustomerUpdateRequest customerUpdateRequest) {
 
-        } else {
-            customerRepository.delete(customer);
+        CustomerResponse  customerResponse = new CustomerResponse();
+        Optional<Customer> customer = customerRepository.findById(id);
+
+        if(customer.isPresent()) {
+            Customer recoveredCustomer = customer.get();
+            BeanUtils.copyProperties(customerUpdateRequest, recoveredCustomer, "id", "cpf", "birthDate");
+            Customer updatedCustomer = customerRepository.save(recoveredCustomer);
+            return customerResponse.convertToCustomerResponse(updatedCustomer);
         }
 
-        return customer.toDto();
+        return new CustomerResponse();
     }
-
-    public CustomerDto updateCustomer(Long id, CustomerDto customerDto) throws CustomerNotFoundException {
-
-        Optional<Customer> recoveredCustomer = Optional.of(
-                customerRepository.findById(id)
-                        .orElseThrow(() -> new CustomerNotFoundException()
-                        )
-        );
-
-        final Customer updatedCustomer = recoveredCustomer.get();
-        BeanUtils.copyProperties(customerDto, updatedCustomer, "id", "cpf", "birthDate");
-        final Customer customer = customerRepository.save(updatedCustomer);
-
-            return customerDto.fromModel(customer);
-    }
-
-
 }

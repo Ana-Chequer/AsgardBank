@@ -22,12 +22,6 @@ public class AccountActivity {
     @Column(nullable = false)
     private BigDecimal amount;
 
-    @Column(name = "account_number_origin", nullable = false)
-    private Long accountNumberOrigin;
-
-    @Column(name = "account_number_target")
-    private Long accountNumberTarget;
-
     @JoinColumn(name = "account_activity_type_id", nullable = false)
     @Enumerated(EnumType.STRING)
     private AccountActivityType activity;
@@ -42,7 +36,5 @@ public class AccountActivity {
     @JoinColumn(name = "current_account_id", nullable = false)
     @ManyToOne
     private Account account;
-
-
 }
 

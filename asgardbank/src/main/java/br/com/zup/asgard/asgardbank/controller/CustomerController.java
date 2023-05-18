@@ -1,14 +1,17 @@
 package br.com.zup.asgard.asgardbank.controller;
 
-import br.com.zup.asgard.asgardbank.dto.CustomerDto;
+import br.com.zup.asgard.asgardbank.dto.CustomerRequest;
 import br.com.zup.asgard.asgardbank.dto.CustomerResponse;
-import br.com.zup.asgard.asgardbank.exception.CustomerNotDeletedException;
-import br.com.zup.asgard.asgardbank.exception.CustomerNotFoundException;
+import br.com.zup.asgard.asgardbank.dto.CustomerUpdateRequest;
 import br.com.zup.asgard.asgardbank.service.CustomerService;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.validation.Valid;
+import java.net.URI;
 
 @RestController
 @RequestMapping("/customer")
@@ -20,68 +23,49 @@ public class CustomerController {
         this.customerService = customerService;
     }
 
-    @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public CustomerResponse searchCustomerByCpf(@Valid @RequestParam String cpf)
-            throws CustomerNotFoundException {
+    @GetMapping("/{cpf}")
+    public ResponseEntity<?> searchCustomer(@PathVariable @Valid String cpf) {
 
-        final CustomerDto foundcustomerDto = customerService.searchCustomerByCpf(cpf);
-
-        final CustomerResponse customerResponse = new CustomerResponse();
-
-        return customerResponse.fromCustomerDto(foundcustomerDto);
-
-    }
-
-    @GetMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public CustomerResponse searchCustomerById(@PathVariable @Valid Long id)
-            throws CustomerNotFoundException {
-
-        final CustomerDto foundcustomerDto = customerService.searchCustomerById(id);
-
-        final CustomerResponse customerResponse = new CustomerResponse();
-
-        return customerResponse.fromCustomerDto(foundcustomerDto);
-
+        CustomerResponse customerResponse = customerService.searchCustomerByCpf(cpf);
+            if(customerResponse != null) {
+            return ResponseEntity.ok().body("Customer has found");
+        }
+            return ResponseEntity.notFound().build();
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public CustomerResponse createCustomer(@RequestBody @Valid CustomerDto customerDto) {
+    public ResponseEntity<?> createCustomer(@RequestBody @Valid CustomerRequest customerRequest, UriComponentsBuilder uriComponentsBuilder) {
 
-        final CustomerDto receivedCustomerDto = customerService.createCustomer(customerDto);
+     CustomerResponse customerResponse = customerService.createCustomer(customerRequest);
 
-        final CustomerResponse customerResponse = new CustomerResponse();
+     URI location = uriComponentsBuilder.path("/customerResponse/{id}").buildAndExpand(customerResponse.getId()).toUri();
 
-        return customerResponse.fromCustomerDto(receivedCustomerDto);
+        return ResponseEntity.created(location).body("Customer successfully created");
 
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public CustomerResponse deleteCustomer(@PathVariable Long id)
-            throws CustomerNotFoundException, CustomerNotDeletedException {
+    public ResponseEntity<?> deleteCustomer(@PathVariable Long id) {
 
-        final CustomerDto deletedcustomerDto = customerService.deleteCustomer(id);
+        CustomerResponse customerResponse = customerService.deleteCustomer(id);
+        if(customerResponse.getId() == id) {
+            return ResponseEntity.noContent().build();
 
-        final CustomerResponse customerResponse = new CustomerResponse();
-
-        return customerResponse.fromCustomerDto(deletedcustomerDto);
+        }
+        return ResponseEntity.notFound().build();
 
     }
 
     @PatchMapping("/{id}")
-    @ResponseStatus(HttpStatus.OK)
-    public CustomerResponse updateCustomer(@PathVariable Long id, @RequestBody @Valid CustomerDto customerDto)
-            throws CustomerNotFoundException {
+    public ResponseEntity<?> updateCustomer(@PathVariable Long id, @RequestBody CustomerUpdateRequest customerUpdateRequest) {
 
-        final CustomerDto updatedCustomerDto = customerService.updateCustomer(id, customerDto);
+        CustomerResponse customerResponse = customerService.updateCustomer(id, customerUpdateRequest);
+        if(customerResponse.getId() > 0) {
+            return ResponseEntity.noContent().build();
 
-        final CustomerResponse customerResponse = new CustomerResponse();
+        }
 
-        return customerResponse.fromCustomerDto(updatedCustomerDto);
+        return ResponseEntity.unprocessableEntity().body("Customer's data can not updated");
 
     }
-
 }

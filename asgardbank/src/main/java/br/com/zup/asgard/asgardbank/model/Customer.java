@@ -1,18 +1,13 @@
 package br.com.zup.asgard.asgardbank.model;
 
-
-import br.com.zup.asgard.asgardbank.dto.CustomerDto;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
 import java.time.LocalDate;
-
 @Entity
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 public class Customer {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,7 +25,7 @@ public class Customer {
     @Column(nullable = false)
     private String address;
 
-    @Column(name = "phone_number", nullable = false, unique = true, length = 11)
+    @Column(name = "phone_number", nullable = false, length = 11)
     private String telephone;
 
     @Column(unique = true, length = 50)
@@ -45,33 +40,13 @@ public class Customer {
     @OneToOne(mappedBy = "customer", cascade = CascadeType.ALL, orphanRemoval = true)
     private Account account;
 
-    public Customer(Long id,
-                    String name,
-                    String cpf,
-                    LocalDate birthDate,
-                    String address,
-                    String telephone,
-                    String email)
-    {
-        this.id = id;
+    public Customer(String name, String cpf, LocalDate birthDate, String address, String telephone, String email) {
         this.name = name;
         this.cpf = cpf;
         this.birthDate = birthDate;
         this.address = address;
         this.telephone = telephone;
         this.email = email;
-    }
-
-    public CustomerDto toDto() {
-        return new CustomerDto(
-                this.id,
-                this.name,
-                this.cpf,
-                this.birthDate,
-                this.address,
-                this.telephone,
-                this.email
-        );
     }
 
 }
